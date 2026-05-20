@@ -119,6 +119,115 @@ Each coefficient `cᵢ` is found just by taking the dot product `v · eᵢ`. No 
 
 Think of mixing paint: if your basis colors are truly independent (orthogonal), you can extract the exact amount of red, blue, green from any mixture by a single operation per color. If they weren't independent, extracting "red" would also pull some blue with it.
 
+#### Why does `cᵢ = v · eᵢ` actually work? — the derivation
+
+This is the key trick, so let's see it carefully.
+
+**Step A — set up.** We know `v` can be written as some combination of the basis vectors with unknown coefficients:
+
+```
+v = c₁·e₁ + c₂·e₂ + c₃·e₃ + ...
+```
+
+The question: how do we find `c₁`?
+
+**Step B — dot both sides with `e₁`.**
+
+```
+v · e₁ = (c₁·e₁ + c₂·e₂ + c₃·e₃ + ...) · e₁
+```
+
+Distribute the dot product:
+
+```
+v · e₁ = c₁·(e₁·e₁) + c₂·(e₂·e₁) + c₃·(e₃·e₁) + ...
+```
+
+**Step C — use orthogonality to kill every term except one.**
+
+By definition, an orthogonal basis satisfies `eᵢ · eⱼ = 0` whenever `i ≠ j`. So:
+
+```
+v · e₁ = c₁·(e₁·e₁) + c₂·  0   + c₃·  0   + ...
+                            ↑           ↑
+                  killed because    killed because
+                  e₂ ⊥ e₁          e₃ ⊥ e₁
+```
+
+Only the first term survives:
+
+```
+v · e₁ = c₁ · (e₁ · e₁)
+```
+
+**Step D — if `e₁` has unit length, `e₁·e₁ = 1`, so:**
+
+```
+c₁ = v · e₁
+```
+
+Done. And the same trick gives `c₂ = v · e₂`, `c₃ = v · e₃`, etc. — each coefficient is one dot product.
+
+#### Concrete example — orthogonal basis (it works)
+
+Let `v = [3, 4]`, basis `e₁ = [1, 0]`, `e₂ = [0, 1]`.
+
+```
+c₁ = v · e₁ = 3·1 + 4·0 = 3   ✓
+c₂ = v · e₂ = 3·0 + 4·1 = 4   ✓
+```
+
+So `v = 3·e₁ + 4·e₂`. Sanity check: `3·[1,0] + 4·[0,1] = [3,4]`. ✓
+
+#### Counter-example — NON-orthogonal basis (it breaks)
+
+Take a basis that is **not** orthogonal:
+
+```
+f₁ = [1, 0]
+f₂ = [1, 1]
+```
+
+Check: `f₁ · f₂ = 1·1 + 0·1 = 1` ≠ 0 → not orthogonal.
+
+The **true** decomposition of `v = [3, 4]` into this basis comes from solving the system:
+
+```
+c₁·[1,0] + c₂·[1,1] = [3,4]
+  → c₁ + c₂ = 3
+  →       c₂ = 4
+  → c₂ = 4, c₁ = −1
+```
+
+So the correct coefficients are `c₁ = −1`, `c₂ = 4`.
+
+But what does the dot-product shortcut give?
+
+```
+v · f₁ = 3·1 + 4·0 = 3
+```
+
+It says `c₁ = 3`. **But the real answer is c₁ = −1.** The shortcut lied.
+
+Why? Redo Step C without orthogonality:
+
+```
+v · f₁ = c₁·(f₁·f₁) + c₂·(f₂·f₁)
+       = c₁·1       + c₂·1
+       = c₁ + c₂
+```
+
+The `c₂` term **didn't die** — because `f₂` wasn't perpendicular to `f₁`. The dot product mixes contributions from `c₁` AND `c₂` together. You can't read off `c₁` cleanly — you'd have to solve a system of equations to untangle them.
+
+#### The big picture
+
+| Basis is...     | Effect of `v · eᵢ`                              |
+|-----------------|-------------------------------------------------|
+| Orthogonal      | Only the `cᵢ` term survives → clean readout     |
+| Not orthogonal  | All terms leak in → tangled mess                |
+
+Orthogonality is exactly the property that makes coefficients readable by a single, independent measurement — one dot product per direction, no cross-talk. That's why we'll need sin/cos at different frequencies to be mutually orthogonal in the next section: it's what lets each frequency's coefficient be one clean integral, with no leakage from other frequencies.
+
 ---
 
 ## Section 3 — Why sin/cos Integrals Equal Zero
