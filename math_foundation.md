@@ -442,14 +442,6 @@ Let m = 2, n = 3. The integrand is `sin(2t)·sin(3t) = ½[cos(t) − cos(5t)]`.
 - `∫₀²π cos(5t) dt` = (sin(10π) − sin(0))/5 = 0 ✓
 - Sum: 0. Done.
 
-You can verify in Python:
-```python
-from scipy.integrate import quad
-from math import sin, pi
-quad(lambda t: sin(2*t)*sin(3*t), 0, 2*pi)  # ≈ 0
-quad(lambda t: sin(2*t)*sin(2*t), 0, 2*pi)  # ≈ π
-```
-
 ---
 
 ## Section 5 — Projection Example: f(t) = cos(2t) + 3·sin(5t)
@@ -710,19 +702,5 @@ which is what we started with.
 2. **Any mismatch** (different frequency, OR cos vs sin at same frequency) → integral = 0 → no leakage.
 
 This is why the Fourier transform is the "right" coordinate system for signals: each frequency component is read off independently, with zero interference from the others. That's orthogonality earning its keep.
-
-### Numerical verification
-
-```python
-from scipy.integrate import quad
-from math import cos, sin, pi
-
-f = lambda t: cos(2*t) + 3*sin(5*t)
-
-for n in range(7):
-    a_n, _ = quad(lambda t: f(t)*cos(n*t), 0, 2*pi)
-    b_n, _ = quad(lambda t: f(t)*sin(n*t), 0, 2*pi)
-    print(f"n={n}: a_n={a_n/pi:.4f}, b_n={b_n/pi:.4f}")
-```
 
 You'll see exactly the table above — zeros everywhere except `a_2 = 1` and `b_5 = 3`.
