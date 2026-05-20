@@ -226,11 +226,152 @@ The `c₂` term **didn't die** — because `f₂` wasn't perpendicular to `f₁`
 | Orthogonal      | Only the `cᵢ` term survives → clean readout     |
 | Not orthogonal  | All terms leak in → tangled mess                |
 
-Orthogonality is exactly the property that makes coefficients readable by a single, independent measurement — one dot product per direction, no cross-talk. That's why we'll need sin/cos at different frequencies to be mutually orthogonal in the next section: it's what lets each frequency's coefficient be one clean integral, with no leakage from other frequencies.
+Orthogonality is exactly the property that makes coefficients readable by a single, independent measurement — one dot product per direction, no cross-talk. That's why we'll need sin/cos at different frequencies to be mutually orthogonal in Section 4: it's what lets each frequency's coefficient be one clean integral, with no leakage from other frequencies.
 
 ---
 
-## Section 3 — Why sin/cos Integrals Equal Zero
+## Section 3 — Fourier Series, the Fourier Transform, and Euler's Formula
+
+Before we use orthogonality on sines and cosines, let's see the bigger picture: what is a Fourier series, what is the Fourier transform, and why do we suddenly need `e^(iωt)` instead of plain sines and cosines?
+
+### Step 1: The time domain
+
+When you record a signal — a voice, a heartbeat, a stock price — you collect a value at each moment in time. Plotted, the x-axis is time `t` and the y-axis is the signal value `f(t)`. This is the **time domain**.
+
+```
+f(t) ▲
+     │      ╭─╮      ╭─╮
+     │     ╱   ╲    ╱   ╲
+     │────╯     ╲──╯     ╲────→  t
+     │           ╲╱
+```
+
+It's how we naturally observe signals.
+
+### Step 2: The frequency domain — a different lens on the same signal
+
+Same signal, different question:
+> "What pure tones (sinusoids) is this signal made of, and how loud is each?"
+
+Answer: a list of amplitudes, one per frequency.
+
+```
+|F(ω)| ▲
+       │           ●  ← lots of frequency-3 content
+       │
+       │     ●        ← some frequency-1 content
+       │
+       │  ●        ●     ← bits of other frequencies
+       └──────────────────→ ω
+         0  1  2  3  4  5
+```
+
+This list IS the **frequency domain** representation of the same signal.
+
+Two views, one signal:
+
+| Time domain | Frequency domain |
+|-------------|------------------|
+| `f(t)` — how the signal changes over time | `F(ω)` — how much of each frequency the signal contains |
+| Natural for recording / playback | Natural for filtering, compression, tone identification |
+| "What is happening at this moment?" | "What is the signal made of?" |
+
+Analogy: time domain = a street map of a city; frequency domain = an ingredient list (steel, glass, concrete). Same city, different language. The **Fourier transform** is the translator between the two.
+
+### Step 3: Fourier series — periodic signals as sums of sines and cosines
+
+Joseph Fourier (1822): **any reasonable periodic signal** can be written as a sum of sines and cosines:
+
+```
+              ∞
+f(t) = a₀/2 + Σ [aₙ·cos(nω₀t) + bₙ·sin(nω₀t)]
+             n=1
+
+where ω₀ = 2π/T  (T is the period)
+```
+
+The pieces:
+- `a₀/2` — the constant offset (DC level)
+- `n = 1`: the **fundamental** frequency (one cycle per period)
+- `n = 2`: the **second harmonic** (two cycles per period)
+- `n = 3, 4, ...`: higher harmonics
+
+The coefficients `aₙ` and `bₙ` ARE the frequency-domain description — they tell you how much of each harmonic is hiding in the signal. They are exactly the **projections** we'll compute in Section 5.
+
+The amazing thing: with the right `aₙ, bₙ`, you can build a square wave, a sawtooth, a heartbeat — anything periodic — out of pure sines and cosines. Add more harmonics → better approximation.
+
+### Step 4: Enter Euler's formula — why complex exponentials?
+
+At each frequency `n`, we track **two** real coefficients (one cosine, one sine). That's awkward: a sine and a cosine at the same frequency are really the same wave shape, just shifted by 90°. Every time you delay a wave in time, its cosine and sine amounts mix in a tangled way.
+
+**Euler's formula** packages a cosine and a sine at the same frequency into one complex number:
+
+```
+e^(iθ) = cos(θ) + i·sin(θ)
+```
+
+Geometrically, `e^(iθ)` is a point on the **unit circle in the complex plane**, at angle θ measured from the positive real axis:
+
+```
+            Imaginary
+              ▲
+              │
+       e^(iθ) ●
+            ╱ │
+          ╱   │ sin(θ)
+        ╱ θ   │
+      ●───────┴─→ Real
+              cos(θ)
+```
+
+So:
+- **Real part** of `e^(iθ)` = `cos(θ)`
+- **Imaginary part** of `e^(iθ)` = `sin(θ)`
+
+When you let θ = ωt, the point `e^(iωt)` **spins** around the unit circle as time `t` grows — at angular speed ω. Each spin contains both a cosine wave AND a sine wave at frequency ω, automatically in sync.
+
+### Step 5: Why this packaging is so useful
+
+Three reasons we prefer `e^(iωt)` over separate sines and cosines:
+
+1. **Compactness.** One complex number per frequency replaces two real numbers (cos amplitude + sin amplitude). The complex magnitude is the total amplitude; the complex angle is the phase.
+
+2. **Algebra becomes trivial.**
+   - Multiplication: `e^(iA) · e^(iB) = e^(i(A+B))` — phases add.
+   - Differentiation: `d/dt [e^(iωt)] = iω · e^(iωt)` — derivatives turn into multiplication by `iω`. (For sines and cosines, derivatives swap them around messily.)
+   - Time-shift: shifting `t` by τ multiplies `e^(iωt)` by the constant `e^(-iωτ)`. Clean.
+
+3. **Complex exponentials are eigenvectors of LTI systems** (remember Section 1?). For any linear time-invariant system — a filter, an amplifier, an echo chamber — `e^(iωt)` goes in and the **same** `e^(iωt)` comes out, scaled by a complex number (the frequency response at ω). That's the deep reason Fourier analysis is the natural language for signal processing.
+
+### Step 6: From series to transform
+
+The Fourier **series** decomposes a periodic signal into discrete harmonics (n = 0, 1, 2, ...).
+
+But what if the signal isn't periodic — say, a single drum hit that never repeats? Then we let the period T → ∞ and the discrete harmonics squeeze together into a continuous range of frequencies. The sum becomes an integral:
+
+```
+          ∞
+F(ω) = ∫ f(t)·e^(-iωt) dt
+        −∞
+```
+
+This is **the Fourier transform**. It takes a (non-periodic) time-domain signal `f(t)` and gives back the frequency-domain function `F(ω)`.
+
+Reading the formula piece by piece:
+- `e^(iωt)` is the basis function for frequency ω (our "axis" in signal space).
+- `e^(-iωt)` is its complex conjugate, used because the proper inner product for complex functions conjugates one factor.
+- The integral is the inner product `⟨f, e^(iωt)⟩` — the **projection** of `f` onto the frequency-ω axis.
+
+So:
+> `F(ω)` = "How much of frequency ω is inside `f(t)`?"
+
+This is the exact same idea as `c = v · e` for vectors. The Fourier transform is just projection-onto-an-axis, with the axes being complex sinusoids and the dot product being an integral.
+
+In Section 4 we'll prove the orthogonality property that makes this all work. In Section 5 we'll compute these projections on a concrete signal.
+
+---
+
+## Section 4 — Why sin/cos Integrals Equal Zero
 
 The central fact that makes Fourier analysis work:
 
@@ -311,7 +452,7 @@ quad(lambda t: sin(2*t)*sin(2*t), 0, 2*pi)  # ≈ π
 
 ---
 
-## Section 4 — Projection Example: f(t) = cos(2t) + 3·sin(5t)
+## Section 5 — Projection Example: f(t) = cos(2t) + 3·sin(5t)
 
 Let's project this signal onto several frequencies and watch orthogonality do its work.
 
@@ -328,7 +469,7 @@ cos(t), cos(2t), cos(3t), ...
 sin(t), sin(2t), sin(3t), ...
 ```
 
-From Section 3, we know:
+From Section 4, we know:
 ```
 ∫₀²π cos(mt)·cos(nt) dt = π  if m = n,  else 0
 ∫₀²π sin(mt)·sin(nt) dt = π  if m = n,  else 0
@@ -357,12 +498,62 @@ Distribute:
    → π                                 → 0
 ```
 
+#### What does the multiplication actually look like? (the LHS before integrating)
+
+Before evaluating the integrals, let's see what the products `cos(2t)·cos(2t)` and `sin(5t)·cos(2t)` look like as curves. The integral is just the **net area** under each curve, so the shape tells us everything.
+
+**Piece 1: `cos(2t) · cos(2t) = cos²(2t)`**
+
+Use the identity `cos²(x) = (1 + cos(2x))/2`:
+```
+cos(2t)·cos(2t) = ½ + ½·cos(4t)
+                  ↑      ↑
+              DC level   pure oscillation
+              (constant) (cancels to 0)
+```
+
+A constant `½` plus a wiggle. Because `cos²` is never negative, the curve stays **above the t-axis** the whole time:
+
+```
+1 ┤   ╭╮    ╭╮    ╭╮    ╭╮
+  │  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲
+½ ┤───────────────────────────  ← DC level ½  (the curve never dips below 0)
+  │ ╱    ╲╱    ╲╱    ╲╱    ╲
+0 ┴───────────────────────────→  t
+  0            π            2π
+```
+
+When we integrate, the `½·cos(4t)` part cancels (equal area above and below its own axis), but the constant `½` accumulates: `½ · 2π = π`. **Integral = π.** ✓
+
+**Piece 2: `sin(5t) · cos(2t)`**
+
+Use product-to-sum: `sin(A)·cos(B) = ½ [sin(A+B) + sin(A−B)]`:
+```
+sin(5t)·cos(2t) = ½·sin(7t) + ½·sin(3t)
+                  ↑            ↑
+              pure oscillation  pure oscillation
+              (cancels)        (cancels)
+```
+
+**No DC term.** Both pieces are pure sines, oscillating symmetrically above and below zero:
+
+```
+  ╱╲      ╱╲╱╲      ╱╲    ╱╲      ╱╲╱╲      ╱╲
+0───────────────────────────────────────────────→  t
+  ╲╱      ╲╱╲╱      ╲╱    ╲╱      ╲╱╲╱      ╲╱
+  0                       π                       2π
+```
+
+Equal area above and below the axis → they cancel exactly. **Integral = 0.**
+
+**Key insight:** A non-zero integral happens **only when the product has a non-zero DC (constant) component**. That happens **only** when the two factors have matching frequency and matching shape (cos·cos or sin·sin at the same n). Every other product is pure oscillation that cancels.
+
 So:
 ```
 a_2 = (1/π)·π + (3/π)·0 = 1   ✓
 ```
 
-We recovered the amplitude 1 exactly.
+We recovered the amplitude 1 exactly — coming entirely from the DC term hiding inside `cos²(2t)`.
 
 ### Projection 2 — onto sin(5t) (should hit with amplitude 3)
 
@@ -390,7 +581,46 @@ a_3 = (1/π) ∫₀²π [cos(2t) + 3·sin(5t)] · cos(3t) dt
     = 0   ✓
 ```
 
-Cleanly zero. The signal has no frequency-3 cosine content.
+#### What do these products look like?
+
+Both products are mismatched, so both should be pure oscillations with no DC term:
+
+**Piece 1: `cos(2t) · cos(3t)`**
+
+Using `cos(A)·cos(B) = ½[cos(A−B) + cos(A+B)]`:
+```
+cos(2t)·cos(3t) = ½·cos(t) + ½·cos(5t)
+                  ↑           ↑
+              pure oscillation  pure oscillation
+              (cancels)        (cancels)
+```
+
+No DC. Picture two clean cosines (at frequencies 1 and 5) added together — wiggles symmetric around zero. Integral cancels to 0.
+
+**Piece 2: `sin(5t) · cos(3t)`**
+
+Using `sin(A)·cos(B) = ½[sin(A+B) + sin(A−B)]`:
+```
+sin(5t)·cos(3t) = ½·sin(8t) + ½·sin(2t)
+                  ↑           ↑
+              pure oscillation  pure oscillation
+              (cancels)        (cancels)
+```
+
+Again — two pure sines added together, no DC term, integral cancels to 0.
+
+```
+  Mismatched product (e.g. cos(2t)·cos(3t)):
+
+    ╱╲╱╲    ╱╲      ╱╲╱╲    ╱╲╱╲      ╱╲    ╱╲╱╲
+  0─────────────────────────────────────────────→  t
+    ╲╱╲╱    ╲╱      ╲╱╲╱    ╲╱╲╱      ╲╱    ╲╱╲╯
+    0                       π                       2π
+
+  Equal positive and negative area → net integral = 0.
+```
+
+Compare to Projection 1's `cos²(2t)` curve, which stayed entirely **above** the t-axis (because of the hidden DC term `½`). That's the visual difference between a matching projection and a mismatched one.
 
 ### Projection 4 — onto sin(2t) (should be zero — signal has cos(2t), not sin(2t))
 
